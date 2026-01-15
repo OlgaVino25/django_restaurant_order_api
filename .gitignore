@@ -1,3 +1,7 @@
+bundles/**
+node_modules/
+media/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -70,6 +74,12 @@ db.sqlite3-journal
 .env.local
 .env.*.local
 .env.production
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
 
 # Flask
 instance/
@@ -150,6 +160,7 @@ dmypy.json
 
 # Cython
 cython_debug/
+.parcel-cache/
 
 # MkDocs
 /site
@@ -164,3 +175,12 @@ cython_debug/
 *.suo
 *.user
 *.userosscache
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+
