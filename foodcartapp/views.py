@@ -2,6 +2,9 @@ import json
 from django.http import JsonResponse
 from django.templatetags.static import static
 from django.db import transaction
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 
 from .models import Product, Order, OrderItem
 
@@ -70,47 +73,46 @@ def product_list_api(request):
     )
 
 
+@api_view(["GET", "POST"])
 def register_order(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-            print("=" * 50)
-            print("Получен заказ:")
-            print(json.dumps(data, indent=2, ensure_ascii=False))
-            print("=" * 50)
+    if request.method == "GET":
+        return Response(
+            {
+                "message": "Для создания заказа отправьте POST запрос с JSON",
+                "example": {
+                    "firstname": "Иван",
+                    "lastname": "Иванов",
+                    "phonenumber": "+79001234567",
+                    "address": "Москва, ул. Пушкина, д. 1",
+                    "products": [
+                        {"product": 1, "quantity": 2},
+                        {"product": 3, "quantity": 1},
+                    ],
+                },
+            }
+        )
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Неверный JSON"}, status=400)
+    firstname = request.data.get("firstname", "")
+    lastname = request.data.get("lastname", "")
+    phonenumber = request.data.get("phonenumber", "")
+    address = request.data.get("address", "")
+    products = request.data.get("products", [])
 
-        try:
-            with transaction.atomic():
-                order = Order.objects.create(
-                    address=data.get("address", ""),
-                    firstname=data.get("firstname", ""),
-                    lastname=data.get("lastname", ""),
-                    phonenumber=data.get("phonenumber", ""),
-                )
+    with transaction.atomic():
+        order = Order.objects.create(
+            firstname=firstname,
+            lastname=lastname,
+            phonenumber=phonenumber,
+            address=address,
+        )
 
-                order_items = []
-                for item in data.get("products", []):
-                    product_id = item.get("product")
-                    quantity = item.get("quantity", 1)
+        for item in products:
+            product = Product.objects.get(id=item["product"])
+            OrderItem.objects.create(
+                order=order,
+                product=product,
+                quantity=item.get("quantity", 1),
+                price=product.price,
+            )
 
-                    try:
-                        product = Product.objects.get(id=product_id)
-                        OrderItem.objects.create(
-                            order=order,
-                            product=product,
-                            quantity=quantity,
-                            price=product.price,
-                        )
-                    except Product.DoesNotExist:
-                        continue
-
-                return JsonResponse({"id": order.id, "status": "ok"})
-
-        except Exception as e:
-            print(f"Ошибка при создании заказа: {e}")
-            return JsonResponse({"error": "Ошибка при создании заказа"}, status=500)
-
-    return JsonResponse({"error": "Метод не разрешен"}, status=405)
+    return Response({"id": order.id}, status=201)
