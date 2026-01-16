@@ -5,6 +5,8 @@ from django.db import transaction
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from phonenumber_field.phonenumber import PhoneNumber
+from phonenumbers import NumberParseException
 
 from .models import Product, Order, OrderItem
 
@@ -73,6 +75,96 @@ def product_list_api(request):
     )
 
 
+def _validate_string_field(data, field_name, required=True):
+    """Валидация строкового поля"""
+    if field_name not in data:
+        if required:
+            return f"Это обязательное поле."
+        return None
+
+    value = data[field_name]
+
+    if not isinstance(value, str):
+        return "Not a valid string."
+
+    if required and not value.strip():
+        return "Это обязательное поле."
+
+    return None
+
+
+def _validate_phonenumber(data):
+    """Валидация номера телефона"""
+    if "phonenumber" not in data:
+        return "Это обязательное поле."
+
+    phonenumber = data["phonenumber"]
+
+    if not isinstance(phonenumber, str):
+        return "Not a valid string."
+
+    if not phonenumber.strip():
+        return "Это обязательное поле."
+
+    try:
+        phone_number = PhoneNumber.from_string(phonenumber, region="RU")
+        if not phone_number.is_valid():
+            return "Введен некорректный номер телефона."
+    except NumberParseException:
+        return "Введен некорректный номер телефона."
+
+    return None
+
+
+def _validate_products(data):
+    """Валидация списка продуктов"""
+    if "products" not in data:
+        return "Это обязательное поле."
+
+    products = data["products"]
+
+    if not isinstance(products, list):
+        return "Поле 'products' должно быть списком."
+
+    if len(products) == 0:
+        return "Список 'products' не может быть пустым."
+
+    for i, item in enumerate(products):
+        if not isinstance(item, dict):
+            return f"Элемент {i} в 'products' должен быть объектом."
+
+        if "product" not in item:
+            return f"Элемент {i} в 'products' должен содержать поле 'product'."
+
+        if "quantity" not in item:
+            return f"Элемент {i} в 'products' должен содержать поле 'quantity'."
+
+        try:
+            product_id = int(item["product"])
+        except (ValueError, TypeError):
+            return f"Элемент {i}: поле 'product' должно быть числом."
+
+        try:
+            quantity = int(item["quantity"])
+            if quantity <= 0:
+                return f"Элемент {i}: поле 'quantity' должно быть положительным числом."
+        except (ValueError, TypeError):
+            return f"Элемент {i}: поле 'quantity' должно быть числом."
+
+    return None
+
+
+def _normalize_phone(phone_str):
+    """Нормализация номера телефона"""
+    try:
+        phone_number = PhoneNumber.from_string(phone_str, region="RU")
+        if phone_number.is_valid():
+            return phone_number.as_e164
+        return None
+    except NumberParseException:
+        return None
+
+
 @api_view(["GET", "POST"])
 def register_order(request):
     if request.method == "GET":
@@ -93,69 +185,36 @@ def register_order(request):
         )
 
     order_data = request.data
+    errors = {}
 
-    required_fields = ["firstname", "lastname", "phonenumber", "address", "products"]
-    missing_fields = [field for field in required_fields if field not in order_data]
+    string_fields = [
+        ("firstname", True),
+        ("lastname", True),
+        ("address", True),
+    ]
 
-    if missing_fields:
+    for field_name, required in string_fields:
+        error = _validate_string_field(order_data, field_name, required)
+        if error:
+            errors[field_name] = error
+
+    phone_error = _validate_phonenumber(order_data)
+    if phone_error:
+        errors["phonenumber"] = phone_error
+
+    products_error = _validate_products(order_data)
+    if products_error:
+        errors["products"] = products_error
+
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+    normalized_phone = _normalize_phone(order_data["phonenumber"])
+    if not normalized_phone:
         return Response(
-            {"error": f"Отсутствуют обязательные поля: {', '.join(missing_fields)}"},
+            {"phonenumber": "Введен некорректный номер телефона."},
             status=status.HTTP_400_BAD_REQUEST,
         )
-
-    if not isinstance(order_data["products"], list):
-        return Response(
-            {"error": "Поле 'products' должно быть списком"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    if len(order_data["products"]) == 0:
-        return Response(
-            {"error": "Список 'products' не может быть пустым"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    for i, item in enumerate(order_data["products"]):
-        if not isinstance(item, dict):
-            return Response(
-                {"error": f"Элемент {i} в 'products' должен быть объектом"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if "product" not in item:
-            return Response(
-                {"error": f"Элемент {i} в 'products' должен содержать поле 'product'"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        if "quantity" not in item:
-            return Response(
-                {"error": f"Элемент {i} в 'products' должен содержать поле 'quantity'"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            product_id = int(item["product"])
-        except (ValueError, TypeError):
-            return Response(
-                {"error": f"Элемент {i}: поле 'product' должно быть числом"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        try:
-            quantity = int(item["quantity"])
-            if quantity <= 0:
-                return Response(
-                    {
-                        "error": f"Элемент {i}: поле 'quantity' должно быть положительным числом"
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-        except (ValueError, TypeError):
-            return Response(
-                {"error": f"Элемент {i}: поле 'quantity' должно быть числом"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
     try:
         with transaction.atomic():
@@ -175,7 +234,7 @@ def register_order(request):
                 except Product.DoesNotExist:
                     return Response(
                         {"error": f"Товар с ID {product_id} не найден"},
-                        status=status.HTTP_400_BAD_REQUEST
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
 
                 OrderItem.objects.create(
