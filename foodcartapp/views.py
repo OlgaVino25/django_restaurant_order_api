@@ -92,27 +92,103 @@ def register_order(request):
             }
         )
 
-    firstname = request.data.get("firstname", "")
-    lastname = request.data.get("lastname", "")
-    phonenumber = request.data.get("phonenumber", "")
-    address = request.data.get("address", "")
-    products = request.data.get("products", [])
+    order_data = request.data
 
-    with transaction.atomic():
-        order = Order.objects.create(
-            firstname=firstname,
-            lastname=lastname,
-            phonenumber=phonenumber,
-            address=address,
+    required_fields = ["firstname", "lastname", "phonenumber", "address", "products"]
+    missing_fields = [field for field in required_fields if field not in order_data]
+
+    if missing_fields:
+        return Response(
+            {"error": f"Отсутствуют обязательные поля: {', '.join(missing_fields)}"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
-        for item in products:
-            product = Product.objects.get(id=item["product"])
-            OrderItem.objects.create(
-                order=order,
-                product=product,
-                quantity=item.get("quantity", 1),
-                price=product.price,
+    if not isinstance(order_data["products"], list):
+        return Response(
+            {"error": "Поле 'products' должно быть списком"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if len(order_data["products"]) == 0:
+        return Response(
+            {"error": "Список 'products' не может быть пустым"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    for i, item in enumerate(order_data["products"]):
+        if not isinstance(item, dict):
+            return Response(
+                {"error": f"Элемент {i} в 'products' должен быть объектом"},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
-    return Response({"id": order.id}, status=201)
+        if "product" not in item:
+            return Response(
+                {"error": f"Элемент {i} в 'products' должен содержать поле 'product'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if "quantity" not in item:
+            return Response(
+                {"error": f"Элемент {i} в 'products' должен содержать поле 'quantity'"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            product_id = int(item["product"])
+        except (ValueError, TypeError):
+            return Response(
+                {"error": f"Элемент {i}: поле 'product' должно быть числом"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            quantity = int(item["quantity"])
+            if quantity <= 0:
+                return Response(
+                    {
+                        "error": f"Элемент {i}: поле 'quantity' должно быть положительным числом"
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+        except (ValueError, TypeError):
+            return Response(
+                {"error": f"Элемент {i}: поле 'quantity' должно быть числом"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+    try:
+        with transaction.atomic():
+            order = Order.objects.create(
+                firstname=order_data["firstname"],
+                lastname=order_data["lastname"],
+                phonenumber=order_data["phonenumber"],
+                address=order_data["address"],
+            )
+
+            for item in order_data["products"]:
+                product_id = item["product"]
+                quantity = item["quantity"]
+
+                try:
+                    product = Product.objects.get(id=product_id)
+                except Product.DoesNotExist:
+                    return Response(
+                        {"error": f"Товар с ID {product_id} не найден"},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
+
+                OrderItem.objects.create(
+                    order=order,
+                    product=product,
+                    quantity=quantity,
+                    price=product.price,
+                )
+
+            return Response({"id": order.id}, status=status.HTTP_201_CREATED)
+
+    except Exception as e:
+        return Response(
+            {"error": f"Ошибка при создании заказа: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
