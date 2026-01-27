@@ -98,7 +98,8 @@ def register_order(request):
         try:
             with transaction.atomic():
                 order = serializer.save()
-                return Response({"id": order.id}, status=status.HTTP_201_CREATED)
+                order_serializer = OrderSerializer(order)
+                return Response(order_serializer.data, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response(
                 {"error": f"Ошибка при создании заказа: {str(e)}"},

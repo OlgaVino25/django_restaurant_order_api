@@ -30,6 +30,7 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(read_only=True)
     products = OrderItemSerializer(
         many=True,
         allow_empty=False,
@@ -39,7 +40,7 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["firstname", "lastname", "phonenumber", "address", "products"]
+        fields = ["id", "firstname", "lastname", "phonenumber", "address", "products"]
         extra_kwargs = {
             "firstname": {"required": True, "allow_blank": False},
             "lastname": {"required": True, "allow_blank": False},
