@@ -2,6 +2,9 @@ from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
 from phonenumber_field.modelfields import PhoneNumberField
+from django.db.models import F, Sum, Value, DecimalField, ExpressionWrapper
+from django.db.models.functions import Coalesce
+from decimal import Decimal
 
 
 class Restaurant(models.Model):
@@ -103,12 +106,32 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
+class OrderQuerySet(models.QuerySet):
+    """
+    Аннотирует каждый заказ полем total_price - общей суммой заказа.
+
+    Returns:
+        QuerySet с дополнительным полем total_price
+    """
+    def with_total_price(self):
+        multiplication = ExpressionWrapper(
+            F("items__price") * F("items__quantity"),
+            output_field=DecimalField(),
+        )
+
+        return self.annotate(
+            total_price=Coalesce(Sum(multiplication), Value(Decimal("0.00")))
+        )
+
+
 class Order(models.Model):
     address = models.TextField("Адрес доставки", max_length=100)
     firstname = models.CharField("Имя", max_length=50, db_index=True)
     lastname = models.CharField("Фамилия", max_length=50, blank=True, db_index=True)
     phonenumber = PhoneNumberField("Телефон", region="RU", db_index=True)
     created_at = models.DateTimeField("Создан", default=timezone.now, db_index=True)
+
+    objects = OrderQuerySet.as_manager()
 
     class Meta:
         verbose_name = "Заказ"
