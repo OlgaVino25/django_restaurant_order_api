@@ -119,7 +119,6 @@ class OrderItemInline(admin.TabularInline):
     extra = 0
     readonly_fields = ["price", "image_preview"]
     fields = ["product", "image_preview", "quantity", "price"]
-    raw_id_fields = ["product"]
 
     def image_preview(self, obj):
         if obj.product.image:
@@ -144,11 +143,61 @@ class OrderAdmin(admin.ModelAdmin):
         "status",
         "created_at",
         "comments",
+        "called_at",
+        "delivered_at",
     ]
     list_filter = ["status", "created_at"]
     search_fields = ["firstname", "lastname", "phonenumber", "address"]
     readonly_fields = ["created_at"]
     ordering = ["-created_at"]
+
+    fieldsets = (
+        (
+            "Информация о клиенте",
+            {
+                "fields": (
+                    ("firstname", "lastname"),
+                    "phonenumber",
+                    "address",
+                )
+            },
+        ),
+        (
+            "Статус заказа",
+            {
+                "fields": (
+                    "status",
+                    "created_at",
+                    "called_at",
+                    "delivered_at",
+                )
+            },
+        ),
+        (
+            "Дополнительно",
+            {
+                "fields": ("comments",),
+                "classes": ("collapse",),
+            },
+        ),
+    )
+
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+
+        form.base_fields["address"].widget.attrs.update(
+            {
+                "style": "width: 300px; height: 60px;",
+            }
+        )
+
+        form.base_fields["comments"].widget.attrs.update(
+            {
+                "style": "width: 300px; height: 60px;",
+            }
+        )
+
+        return form
 
     def response_change(self, request, obj):
         """

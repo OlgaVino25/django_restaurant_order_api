@@ -113,6 +113,7 @@ class OrderQuerySet(models.QuerySet):
     Returns:
         QuerySet с дополнительным полем total_price
     """
+
     def with_total_price(self):
         multiplication = ExpressionWrapper(
             F("items__price") * F("items__quantity"),
@@ -128,7 +129,7 @@ class Order(models.Model):
     STATUS_CHOICES = [
         ("pending", "Необработанный"),
         ("assembly", "Сборка"),
-        ("delivery ", "Доставка"),
+        ("delivery", "Доставка"),
         ("completed", "Выполнено"),
     ]
     address = models.TextField("Адрес доставки", max_length=100)
@@ -136,6 +137,10 @@ class Order(models.Model):
     lastname = models.CharField("Фамилия", max_length=50, blank=True, db_index=True)
     phonenumber = PhoneNumberField("Телефон", region="RU", db_index=True)
     created_at = models.DateTimeField("Создан", default=timezone.now, db_index=True)
+    called_at = models.DateTimeField("Позвонили", null=True, blank=True, db_index=True)
+    delivered_at = models.DateTimeField(
+        "Доставили", null=True, blank=True, db_index=True
+    )
     status = models.CharField(
         "Статус",
         max_length=20,
