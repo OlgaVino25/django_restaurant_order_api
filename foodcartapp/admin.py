@@ -143,6 +143,7 @@ class OrderAdmin(admin.ModelAdmin):
         "address",
         "status",
         "created_at",
+        "comments",
     ]
     list_filter = ["status", "created_at"]
     search_fields = ["firstname", "lastname", "phonenumber", "address"]

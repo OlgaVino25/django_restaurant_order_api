@@ -144,7 +144,7 @@ class Order(models.Model):
         db_index=True,
     )
 
-    notes = models.TextField("Примечания", blank=True)
+    comments = models.TextField("Комментарий", blank=True)
 
     objects = OrderQuerySet.as_manager()
 

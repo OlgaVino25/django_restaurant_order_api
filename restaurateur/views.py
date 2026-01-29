@@ -129,6 +129,7 @@ def view_orders(request):
                 "lastname": order.lastname,
                 "phonenumber": phone_number,
                 "address": order.address,
+                "comments": order.comments,
             }
         )
 
