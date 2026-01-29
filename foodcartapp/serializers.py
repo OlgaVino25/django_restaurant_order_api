@@ -40,11 +40,20 @@ class OrderSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Order
-        fields = ["id", "firstname", "lastname", "phonenumber", "address", "products"]
+        fields = [
+            "id",
+            "payment",
+            "firstname",
+            "lastname",
+            "phonenumber",
+            "address",
+            "products",
+        ]
         extra_kwargs = {
             "firstname": {"required": True, "allow_blank": False},
             "lastname": {"required": True, "allow_blank": False},
             "address": {"required": True, "allow_blank": False},
+            "payment": {"required": True, "allow_blank": False},
         }
 
     def create(self, validated_data):
@@ -91,4 +100,12 @@ class OrderSerializer(serializers.ModelSerializer):
     def validate_products(self, value):
         if not value or len(value) == 0:
             raise serializers.ValidationError("Список 'products' не может быть пустым.")
+        return value
+
+    def validate_payment(self, value):
+        valid_choices = [choice[0] for choice in Order.PAYMENT_CHOICES]
+        if value not in valid_choices:
+            raise serializers.ValidationError(
+                f"Недопустимый способ оплаты. Допустимые значения: {', '.join(valid_choices)}"
+            )
         return value

@@ -84,10 +84,14 @@ def register_order(request):
                     "lastname": "Иванов",
                     "phonenumber": "+79001234567",
                     "address": "Москва, ул. Пушкина, д. 1",
+                    "payment": "cash",
                     "products": [
                         {"product": 1, "quantity": 2},
                         {"product": 3, "quantity": 1},
                     ],
+                },
+                "required_fields": {
+                    "payment": "Способ оплаты: 'cash' (наличные) или 'card' (карта)"
                 },
             }
         )

@@ -136,6 +136,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemInline]
     list_display = [
         "id",
+        "payment",
         "firstname",
         "lastname",
         "phonenumber",
@@ -162,6 +163,7 @@ class OrderAdmin(admin.ModelAdmin):
                 )
             },
         ),
+        ("Способ оплаты", {"fields": ("payment",)}),
         (
             "Статус заказа",
             {
