@@ -2,6 +2,9 @@ from django.contrib import admin
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.http import HttpResponseRedirect
+from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 from .models import Product
 from .models import ProductCategory
@@ -144,3 +147,21 @@ class OrderAdmin(admin.ModelAdmin):
     search_fields = ["firstname", "lastname", "phonenumber", "address"]
     readonly_fields = ["created_at"]
     ordering = ["-created_at"]
+
+    def response_change(self, request, obj):
+        """
+        Переопределяем метод для обработки redirect после сохранения.
+        """
+        response = super().response_change(request, obj)
+
+        if "_continue" not in request.POST and "_addanother" not in request.POST:
+            next_url = request.GET.get("next")
+
+            if next_url and url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure(),
+            ):
+                return HttpResponseRedirect(next_url)
+
+        return response
