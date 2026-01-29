@@ -108,7 +108,12 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
-    orders = Order.objects.all().with_total_price().order_by("-created_at")
+    orders = (
+        Order.objects.all()
+        .with_total_price()
+        .exclude(status="completed")
+        .order_by("-created_at")
+    )
 
     orders_data = []
 
@@ -118,6 +123,7 @@ def view_orders(request):
         orders_data.append(
             {
                 "id": order.id,
+                "status": order.get_status_display(),
                 "total_price": order.total_price,
                 "firstname": order.firstname,
                 "lastname": order.lastname,
