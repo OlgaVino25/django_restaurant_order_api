@@ -1,8 +1,5 @@
-{% extends 'base_restaurateur_page.html' %}
-
-{% block title %}Необработанные заказы | Star Burger{% endblock %}
-
-{% block content %}
+{% extends 'base_restaurateur_page.html' %} {% block title %}Необработанные
+заказы | Star Burger{% endblock %} {% block content %}
 <center>
   <h2>Необработанные заказы</h2>
 </center>
@@ -36,32 +33,40 @@
       <td>{{ item.order.address }}</td>
       <td>{{ item.order.comments }}</td>
       <td>
-        {% if item.available_restaurants %}
-          {% if not item.order_has_coords %}
-            <span style="color: orange">Ошибка определения координат адреса</span>
-          {% else %}
-            <details>
-              <summary>
-                <span class="text-success">Может приготовить</span>
-                <small>({{ item.available_restaurants|length }})</small>
-              </summary>
-              <ul style="margin: 10px 0 0 20px">
-                {% for restaurant_info in item.available_restaurants %}
-                <li>
-                  {{ restaurant_info.restaurant.name }}
-                  {% if restaurant_info.distance %}
-                    - {{ restaurant_info.distance|floatformat:2 }} км
-                  {% else %}
-                    <span style="color: #999"> - расстояние не определено</span>
-                  {% endif %}
-                </li>
-                {% endfor %}
-              </ul>
-            </details>
+        {% if item.order.restaurant %}
+        <!-- ЕСЛИ РЕСТОРАН УЖЕ ВЫБРАН -->
+        <span class="text-success">
+          Готовит {{ item.order.restaurant.name }}
+          {% if item.selected_restaurant.distance %}
+            - {{ item.selected_restaurant.distance|floatformat:2 }} км
           {% endif %}
+        </span>
         {% else %}
-          <span style="color: #999">Нет подходящих ресторанов</span>
-        {% endif %}
+        <!-- ЕСЛИ РЕСТОРАН НЕ ВЫБРАН -->
+        {% if item.available_restaurants %} {% if not item.order_has_coords %}
+        <span style="color: orange">Ошибка определения координат адреса</span>
+        {% else %}
+        <details>
+          <summary>
+            <span class="text-success">Может приготовить</span>
+            <small>({{ item.available_restaurants|length }})</small>
+          </summary>
+          <ul style="margin: 10px 0 0 20px">
+            {% for restaurant_info in item.available_restaurants %}
+            <li>
+              {{ restaurant_info.restaurant.name }}
+                {% if restaurant_info.distance %} 
+                  - {{ restaurant_info.distance|floatformat:2 }} км
+                {% else %}
+              <span style="color: #999"> - расстояние не определено</span>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+        </details>
+        {% endif %} {% else %}
+        <span style="color: #999">Нет подходящих ресторанов</span>
+        {% endif %} {% endif %}
       </td>
       <td>
         <a

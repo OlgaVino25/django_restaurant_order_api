@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
@@ -146,6 +146,7 @@ class OrderAdmin(admin.ModelAdmin):
         "comments",
         "called_at",
         "delivered_at",
+        "restaurant",
     ]
     list_filter = ["status", "created_at"]
     search_fields = ["firstname", "lastname", "phonenumber", "address"]
@@ -201,6 +202,30 @@ class OrderAdmin(admin.ModelAdmin):
         )
 
         return form
+
+    def save_model(self, request, obj, form, change):
+        """
+        Автоматически меняем статус на "Готовится" при выборе ресторана.
+        """
+        if change and "restaurant" in form.changed_data:
+            if obj.restaurant and obj.status == "pending":
+                obj.status = "assembly"
+                self.message_user(
+                    request,
+                    f"Статус заказа №{obj.id} автоматически изменен на 'Готовится'",
+                    messages.SUCCESS,
+                )
+
+        if change and "restaurant" in form.changed_data:
+            if not obj.restaurant and obj.status == "assembly":
+                obj.status = "pending"
+                self.message_user(
+                    request,
+                    f"Статус заказа №{obj.id} возвращен в 'Необработанный'",
+                    messages.WARNING,
+                )
+
+        super().save_model(request, obj, form, change)
 
     def response_change(self, request, obj):
         """
