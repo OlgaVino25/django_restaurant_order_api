@@ -6,11 +6,15 @@ from django.http import HttpResponseRedirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
-from .models import Product
-from .models import ProductCategory
-from .models import Restaurant
-from .models import RestaurantMenuItem
-from .models import Order, OrderItem
+from .models import (
+    Product,
+    ProductCategory,
+    Restaurant,
+    RestaurantMenuItem,
+    Order,
+    OrderItem,
+    Place,
+)
 
 
 class RestaurantMenuItemInline(admin.TabularInline):
@@ -251,7 +255,23 @@ class OrderAdmin(admin.ModelAdmin):
             if obj_id:
                 try:
                     order = Order.objects.get(id=obj_id)
+                    order = Order.objects.prefetch_related("items__product").get(
+                        id=obj_id
+                    )
                     kwargs["queryset"] = order.get_available_restaurants()
                 except Order.DoesNotExist:
                     pass
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+
+@admin.register(Place)
+class PlaceAdmin(admin.ModelAdmin):
+    list_display = ["address", "lat", "lon", "updated_at"]
+    list_filter = ["updated_at"]
+    search_fields = ["address"]
+    readonly_fields = ["updated_at"]
+    ordering = ["-updated_at"]
+
+    fieldsets = (
+        ("Информация о месте", {"fields": ("address", "lat", "lon", "updated_at")}),
+    )

@@ -5,8 +5,9 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import F, Sum, Value, DecimalField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from decimal import Decimal
-from django.db.models import Count
-from .utils.geocoder import get_coordinates, calculate_distance
+from django.db.models import Q, Count
+from foodcartapp.utils.geocoder import calculate_distance
+from foodcartapp.utils.geocoder import get_coordinates
 
 
 class Restaurant(models.Model):
@@ -108,6 +109,25 @@ class RestaurantMenuItem(models.Model):
         return f"{self.restaurant.name} - {self.product.name}"
 
 
+class Place(models.Model):
+    address = models.CharField("Адрес", max_length=200, unique=True, db_index=True)
+    lat = models.FloatField("Широта", null=True, blank=True, db_index=True)
+    lon = models.FloatField("Долгота", null=True, blank=True, db_index=True)
+    updated_at = models.DateTimeField("Дата обновления", auto_now=True, db_index=True)
+
+    class Meta:
+        verbose_name = "Место"
+        verbose_name_plural = "Места"
+        ordering = ["address"]
+
+    def __str__(self):
+        return (
+            f"{self.address}: {self.lat}, {self.lon}"
+            if self.lat and self.lon
+            else self.address
+        )
+
+
 class OrderQuerySet(models.QuerySet):
     """
     Аннотирует каждый заказ полем total_price - общей суммой заказа.
@@ -187,22 +207,32 @@ class Order(models.Model):
         Возвращает QuerySet ресторанов, которые могут приготовить этот заказ.
         Ресторан может приготовить заказ, если у него есть ВСЕ товары из заказа.
         """
-        order_product_ids = self.items.values_list("product_id", flat=True).distinct()
-
-        if not order_product_ids:
+        if not self.items.exists():
             return Restaurant.objects.none()
 
-        restaurants_with_products = (
+        product_ids = list(self.items.values_list("product_id", flat=True).distinct())
+        product_count = len(product_ids)
+
+        if product_count == 0:
+            return Restaurant.objects.none()
+
+        return (
             Restaurant.objects.filter(
-                menu_items__product_id__in=order_product_ids,
-                menu_items__availability=True,
+                menu_items__product_id__in=product_ids, menu_items__availability=True
             )
-            .annotate(matching_products=Count("menu_items__product_id", distinct=True))
-            .filter(matching_products=len(order_product_ids))
+            .annotate(
+                matching_products=Count(
+                    "menu_items",
+                    filter=Q(
+                        menu_items__product_id__in=product_ids,
+                        menu_items__availability=True,
+                    ),
+                    distinct=True,
+                )
+            )
+            .filter(matching_products=product_count)
             .distinct()
         )
-
-        return restaurants_with_products
 
     def get_available_restaurants_with_distances(self):
         """

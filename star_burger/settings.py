@@ -118,6 +118,8 @@ STATIC_URL = "/static/"
 
 INTERNAL_IPS = ["127.0.0.1"]
 
+GEOCODER_CACHE_DAYS = 30
+
 
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets"),

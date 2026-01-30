@@ -10,7 +10,14 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
-from foodcartapp.models import Product, Restaurant, RestaurantMenuItem, Order, OrderItem
+from foodcartapp.models import (
+    Product,
+    Restaurant,
+    RestaurantMenuItem,
+    Order,
+    OrderItem,
+    Place,
+)
 from django.db.models import Case, When, Value, IntegerField
 from foodcartapp.utils.geocoder import get_coordinates
 from django.db.models import Prefetch
@@ -144,9 +151,17 @@ def view_orders(request):
     for restaurant in all_restaurants:
         addresses_to_geocode.add(restaurant.address)
 
+    existing_places = Place.objects.filter(address__in=addresses_to_geocode)
     coordinates_cache = {}
+
+    for place in existing_places:
+        if place.lat and place.lon:
+            coordinates_cache[place.address] = (place.lat, place.lon)
+
     for address in addresses_to_geocode:
-        coordinates_cache[address] = get_coordinates(address)
+        if address not in coordinates_cache:
+            coords = get_coordinates(address)
+            coordinates_cache[address] = coords
 
     restaurant_menu_items = RestaurantMenuItem.objects.filter(
         availability=True
