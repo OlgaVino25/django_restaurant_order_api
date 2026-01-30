@@ -44,7 +44,7 @@
         {% else %}
         <!-- ЕСЛИ РЕСТОРАН НЕ ВЫБРАН -->
         {% if item.available_restaurants %} {% if not item.order_has_coords %}
-        <span style="color: orange">Ошибка определения координат адреса</span>
+        <span style="color: rgb(249, 0, 0)">Ошибка определения координат адреса</span>
         {% else %}
         <details>
           <summary>
