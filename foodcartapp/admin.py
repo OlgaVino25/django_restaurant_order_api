@@ -164,6 +164,7 @@ class OrderAdmin(admin.ModelAdmin):
             },
         ),
         ("Способ оплаты", {"fields": ("payment",)}),
+        ("Ресторан", {"fields": ("restaurant",)}),
         (
             "Статус заказа",
             {
@@ -218,3 +219,14 @@ class OrderAdmin(admin.ModelAdmin):
                 return HttpResponseRedirect(next_url)
 
         return response
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "restaurant":
+            obj_id = request.resolver_match.kwargs.get("object_id")
+            if obj_id:
+                try:
+                    order = Order.objects.get(id=obj_id)
+                    kwargs["queryset"] = order.get_available_restaurants()
+                except Order.DoesNotExist:
+                    pass
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)

@@ -5,7 +5,7 @@ from phonenumber_field.modelfields import PhoneNumberField
 from django.db.models import F, Sum, Value, DecimalField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from decimal import Decimal
-
+from django.db.models import Count
 
 class Restaurant(models.Model):
     name = models.CharField("название", max_length=50)
@@ -126,6 +126,15 @@ class OrderQuerySet(models.QuerySet):
 
 
 class Order(models.Model):
+    restaurant = models.ForeignKey(
+        Restaurant,
+        verbose_name="Ресторан для приготовления",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+    )
+
     STATUS_CHOICES = [
         ("pending", "Необработанный"),
         ("assembly", "Готовится"),
@@ -170,6 +179,28 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Заказ №{self.id} от {self.firstname}"
+
+    def get_available_restaurants(self):
+        """
+        Возвращает QuerySet ресторанов, которые могут приготовить этот заказ.
+        Ресторан может приготовить заказ, если у него есть ВСЕ товары из заказа.
+        """
+        order_product_ids = self.items.values_list("product_id", flat=True).distinct()
+
+        if not order_product_ids:
+            return Restaurant.objects.none()
+
+        restaurants_with_products = (
+            Restaurant.objects.filter(
+                menu_items__product_id__in=order_product_ids,
+                menu_items__availability=True,
+            )
+            .annotate(matching_products=Count("menu_items__product_id", distinct=True))
+            .filter(matching_products=len(order_product_ids))
+            .distinct()
+        )
+
+        return restaurants_with_products
 
 
 class OrderItem(models.Model):

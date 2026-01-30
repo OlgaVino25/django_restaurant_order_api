@@ -18,23 +18,41 @@
       <th>Телефон</th>
       <th>Адрес доставки</th>
       <th>Комментарий</th>
+      <th>Рестораны</th>
       <th>Ссылка на админку</th>
     </tr>
 
-    {% for order in order_items %}
+    {% for item in order_items %}
     <tr>
-      <td>{{ order.id }}</td>
-      <td>{{ order.status }}</td>
-      <td>{{ order.payment }}</td>
-      <td>{{ order.total_price }} руб.</td>
-      <td>{{ order.firstname }} {{ order.lastname }}</td>
-      <td>{{ order.phonenumber }}</td>
-      <td>{{ order.address }}</td>
-      <td>{{ order.comments }}</td>
+      <td>{{ item.order.id }}</td>
+      <td>{{ item.order.get_status_display }}</td>
+      <td>{{ item.order.get_payment_display }}</td>
+      <td>{{ item.total_price }} руб.</td>
+      <td>{{ item.order.firstname }} {{ item.order.lastname }}</td>
+      <td>{{ item.order.phonenumber }}</td>
+      <td>{{ item.order.address }}</td>
+      <td>{{ item.order.comments }}</td>
+      <td>
+        {% if item.available_restaurants %}
+        <details>
+          <summary>
+            <span class="text-success">Может приготовить</span>
+            <small>({{ item.available_restaurants|length }})</small>
+          </summary>
+          <ul style="margin: 10px 0 0 20px;"></ul>
+            {% for restaurant in item.available_restaurants %}
+            <li>{{ restaurant.name }}</li>
+            {% endfor %}
+          </ul>
+        </details>
+        {% else %}
+        <span style="color: #999">Нет подходящих ресторанов</span>
+        {% endif %}
+      </td>
       <td>
         <a
-        href="{% url 'admin:foodcartapp_order_change' order.id %}?next={{ request.path|urlencode }}"
-        >Редактировать</a
+          href="{% url 'admin:foodcartapp_order_change' item.order.id %}?next={{ request.path|urlencode }}"
+          >Редактировать</a
         >
       </td>
     </tr>

@@ -11,6 +11,7 @@ from django.contrib.auth import views as auth_views
 
 
 from foodcartapp.models import Product, Restaurant, Order
+from django.db.models import Case, When, Value, IntegerField
 
 
 class Login(forms.Form):
@@ -112,25 +113,30 @@ def view_orders(request):
         Order.objects.all()
         .with_total_price()
         .exclude(status="completed")
-        .order_by("-created_at")
+        .prefetch_related("items__product", "restaurant")
+        .annotate(
+            status_order=Case(
+                When(status="pending", then=Value(1)),
+                When(status="assembly", then=Value(2)),
+                When(status="delivery", then=Value(3)),
+                default=Value(99),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("status_order", "-created_at")
     )
 
     orders_data = []
 
     for order in orders:
-        phone_number = str(order.phonenumber)
+
+        available_restaurants = order.get_available_restaurants()
 
         orders_data.append(
             {
-                "id": order.id,
-                "status": order.get_status_display(),
-                "payment": order.get_payment_display(),
+                "order": order,
+                "available_restaurants": available_restaurants,
                 "total_price": order.total_price,
-                "firstname": order.firstname,
-                "lastname": order.lastname,
-                "phonenumber": phone_number,
-                "address": order.address,
-                "comments": order.comments,
             }
         )
 
