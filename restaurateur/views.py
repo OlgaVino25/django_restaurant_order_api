@@ -10,8 +10,11 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
 
-from foodcartapp.models import Product, Restaurant, Order
+from foodcartapp.models import Product, Restaurant, Order, OrderItem
 from django.db.models import Case, When, Value, IntegerField
+from foodcartapp.utils.geocoder import get_coordinates
+from django.db.models import Prefetch
+from collections import defaultdict
 
 
 class Login(forms.Form):
@@ -113,7 +116,10 @@ def view_orders(request):
         Order.objects.all()
         .with_total_price()
         .exclude(status="completed")
-        .prefetch_related("items__product", "restaurant")
+        .prefetch_related(
+            Prefetch("items", queryset=OrderItem.objects.select_related("product")),
+            "restaurant",
+        )
         .annotate(
             status_order=Case(
                 When(status="pending", then=Value(1)),
@@ -126,17 +132,58 @@ def view_orders(request):
         .order_by("status_order", "-created_at")
     )
 
+    addresses_to_geocode = set()
+
+    for order in orders:
+        addresses_to_geocode.add(order.address)
+
+    restaurant_addresses = Restaurant.objects.values_list(
+        "address", flat=True
+    ).distinct()
+    addresses_to_geocode.update(restaurant_addresses)
+
+    coordinates_cache = {}
+    for address in addresses_to_geocode:
+        coordinates_cache[address] = get_coordinates(address)
+
     orders_data = []
 
     for order in orders:
+        order_coords = coordinates_cache.get(order.address)
 
         available_restaurants = order.get_available_restaurants()
+        restaurants_with_distances = []
+
+        for restaurant in available_restaurants:
+            restaurant_coords = coordinates_cache.get(restaurant.address)
+            distance = None
+
+            if order_coords and restaurant_coords:
+                from foodcartapp.utils.geocoder import calculate_distance
+
+                distance = calculate_distance(order_coords, restaurant_coords)
+
+            restaurants_with_distances.append(
+                {
+                    "restaurant": restaurant,
+                    "distance": distance,
+                    "has_distance": distance is not None,
+                }
+            )
+
+        restaurants_with_distances.sort(
+            key=lambda x: (
+                x["distance"] is None,
+                x["distance"] if x["distance"] is not None else float("inf"),
+            )
+        )
 
         orders_data.append(
             {
                 "order": order,
-                "available_restaurants": available_restaurants,
+                "available_restaurants": restaurants_with_distances,
                 "total_price": order.total_price,
+                "order_has_coords": order_coords is not None,
             }
         )
 

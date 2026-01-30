@@ -6,6 +6,8 @@ from django.db.models import F, Sum, Value, DecimalField, ExpressionWrapper
 from django.db.models.functions import Coalesce
 from decimal import Decimal
 from django.db.models import Count
+from .utils.geocoder import get_coordinates, calculate_distance
+
 
 class Restaurant(models.Model):
     name = models.CharField("название", max_length=50)
@@ -201,6 +203,43 @@ class Order(models.Model):
         )
 
         return restaurants_with_products
+
+    def get_available_restaurants_with_distances(self):
+        """
+        Возвращает QuerySet ресторанов с расстояниями до адреса доставки.
+        """
+        available_restaurants = self.get_available_restaurants()
+
+        order_coords = get_coordinates(self.address)
+
+        restaurants_with_distances = []
+        for restaurant in available_restaurants:
+            restaurant_coords = get_coordinates(restaurant.address)
+
+            distance = None
+            if order_coords and restaurant_coords:
+                try:
+                    distance = calculate_distance(order_coords, restaurant_coords)
+                except ValueError as e:
+                    print(f"Ошибка расчета расстояния: {e}")
+                    distance = None
+
+            restaurants_with_distances.append(
+                {
+                    "restaurant": restaurant,
+                    "distance": distance,
+                    "has_distance": distance is not None,
+                }
+            )
+
+        restaurants_with_distances.sort(
+            key=lambda x: (
+                x["distance"] is None,
+                x["distance"] if x["distance"] is not None else float("inf"),
+            )
+        )
+
+        return restaurants_with_distances
 
 
 class OrderItem(models.Model):
