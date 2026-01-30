@@ -128,7 +128,7 @@ class OrderQuerySet(models.QuerySet):
 class Order(models.Model):
     STATUS_CHOICES = [
         ("pending", "Необработанный"),
-        ("assembly", "Сборка"),
+        ("assembly", "Готовится"),
         ("delivery", "Доставка"),
         ("completed", "Выполнено"),
     ]
