@@ -56,8 +56,17 @@ pip install -r requirements.txt
 
 Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
 ```sh
+YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
+ALLOWED_HOSTS=localhost,127.0.0.1
 SECRET_KEY=django-insecure-0if40nf4nf93n4
+DEBUG=True
 ```
+
+Получение Yandex Geocoder API ключа:
+
+Перейдите в [кабинете разработчика](https://developer.tech.yandex.ru/services)
+Создайте новый ключ для Geocoder API
+Скопируйте ключ в переменную `YANDEX_GEOCODER_API_KEY`
 
 Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
 
@@ -69,6 +78,10 @@ python manage.py migrate
 
 ```sh
 python manage.py runserver
+```
+После миграций создайте суперпользователя для доступа к админке:
+```sh
+python manage.py createsuperuser
 ```
 
 Откройте сайт в браузере по адресу [http://127.0.0.1:8000/](http://127.0.0.1:8000/). Если вы увидели пустую белую страницу, то не пугайтесь, выдохните. Просто фронтенд пока ещё не собран. Переходите к следующему разделу README.
