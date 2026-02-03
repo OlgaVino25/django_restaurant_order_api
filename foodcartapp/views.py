@@ -73,29 +73,8 @@ def product_list_api(request):
     )
 
 
-@api_view(["GET", "POST"])
+@api_view(["POST"])
 def register_order(request):
-    if request.method == "GET":
-        return Response(
-            {
-                "message": "Для создания заказа отправьте POST запрос с JSON",
-                "example": {
-                    "firstname": "Иван",
-                    "lastname": "Иванов",
-                    "phonenumber": "+79001234567",
-                    "address": "Москва, ул. Пушкина, д. 1",
-                    "payment": "cash",
-                    "products": [
-                        {"product": 1, "quantity": 2},
-                        {"product": 3, "quantity": 1},
-                    ],
-                },
-                "required_fields": {
-                    "payment": "Способ оплаты: 'cash' (наличные) или 'card' (карта)"
-                },
-            }
-        )
-
     serializer = OrderSerializer(data=request.data)
 
     if serializer.is_valid():
