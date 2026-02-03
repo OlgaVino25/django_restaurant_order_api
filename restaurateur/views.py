@@ -116,9 +116,9 @@ def view_restaurants(request):
     )
 
 
-@user_passes_test(is_manager, login_url="restaurateur:login")
-def view_orders(request):
-    orders = (
+def _get_order_queryset():
+    """Возвращает QuerySet заказов с аннотацией для сортировки."""
+    return (
         Order.objects.with_total_price()
         .exclude(status="completed")
         .select_related("restaurant")
@@ -140,14 +140,22 @@ def view_orders(request):
         .order_by("status_order", "-created_at")
     )
 
+
+def _collect_addresses(orders, restaurants):
+    """Собирает все адреса для геокодирования."""
     addresses_to_geocode = set()
+
     for order in orders:
         addresses_to_geocode.add(order.address)
 
-    all_restaurants = Restaurant.objects.all()
-    for restaurant in all_restaurants:
+    for restaurant in restaurants:
         addresses_to_geocode.add(restaurant.address)
 
+    return addresses_to_geocode
+
+
+def _build_coordinates_cache(addresses_to_geocode):
+    """Создает кэш координат для адресов."""
     existing_places = Place.objects.filter(address__in=addresses_to_geocode)
     coordinates_cache = {}
 
@@ -160,6 +168,11 @@ def view_orders(request):
             coords = get_coordinates(address)
             coordinates_cache[address] = coords
 
+    return coordinates_cache
+
+
+def _build_restaurant_products_cache():
+    """Создает кэш товаров, доступных в каждом ресторане."""
     restaurant_menu_items = RestaurantMenuItem.objects.filter(
         availability=True
     ).select_related("restaurant", "product")
@@ -171,76 +184,120 @@ def view_orders(request):
             restaurant_products[restaurant_id] = set()
         restaurant_products[restaurant_id].add(menu_item.product.id)
 
-    orders_data = []
+    return restaurant_products
 
+
+def _get_order_product_ids(order):
+    """Возвращает множество ID товаров в заказе."""
+    return set(item.product.id for item in order.items.all())
+
+
+def _get_restaurants_with_distances(order_coords, restaurants, coordinates_cache):
+    """Возвращает список ресторанов с расстояниями до заказа."""
+    restaurants_with_distances = []
+
+    for restaurant in restaurants:
+        restaurant_coords = coordinates_cache.get(restaurant.address)
+        distance = None
+
+        if order_coords and restaurant_coords:
+            distance = calculate_distance(order_coords, restaurant_coords)
+
+        restaurants_with_distances.append(
+            {
+                "restaurant": restaurant,
+                "distance": distance,
+                "has_distance": distance is not None,
+            }
+        )
+
+    restaurants_with_distances.sort(
+        key=lambda x: (
+            x["distance"] is None,
+            x["distance"] if x["distance"] is not None else float("inf"),
+        )
+    )
+
+    return restaurants_with_distances
+
+
+def _process_order_with_restaurant(order, coordinates_cache, total_price):
+    """Обрабатывает заказ с уже выбранным рестораном."""
+    order_coords = coordinates_cache.get(order.address)
+    distance_to_selected = None
+
+    if order_coords and order.restaurant.address in coordinates_cache:
+        restaurant_coords = coordinates_cache.get(order.restaurant.address)
+        if restaurant_coords:
+            distance_to_selected = calculate_distance(order_coords, restaurant_coords)
+
+    return {
+        "order": order,
+        "selected_restaurant": {
+            "restaurant": order.restaurant,
+            "distance": distance_to_selected,
+            "has_distance": distance_to_selected is not None,
+        },
+        "available_restaurants": [],
+        "total_price": total_price,
+        "order_has_coords": order_coords is not None,
+    }
+
+
+def _process_order_without_restaurant(
+    order, coordinates_cache, restaurant_products, all_restaurants, total_price
+):
+    """Обрабатывает заказ без выбранного ресторана."""
+    order_coords = coordinates_cache.get(order.address)
+    order_product_ids = _get_order_product_ids(order)
+
+    matching_restaurants = []
+    for restaurant in all_restaurants:
+        available_products = restaurant_products.get(restaurant.id, set())
+        if order_product_ids.issubset(available_products):
+            matching_restaurants.append(restaurant)
+
+    restaurants_with_distances = _get_restaurants_with_distances(
+        order_coords, matching_restaurants, coordinates_cache
+    )
+
+    return {
+        "order": order,
+        "selected_restaurant": None,
+        "available_restaurants": restaurants_with_distances,
+        "total_price": total_price,
+        "order_has_coords": order_coords is not None,
+    }
+
+
+@user_passes_test(is_manager, login_url="restaurateur:login")
+def view_orders(request):
+    orders = _get_order_queryset()
+    all_restaurants = list(Restaurant.objects.all())
+
+    addresses_to_geocode = _collect_addresses(orders, all_restaurants)
+    coordinates_cache = _build_coordinates_cache(addresses_to_geocode)
+
+    restaurant_products = _build_restaurant_products_cache()
+
+    orders_data = []
     for order in orders:
-        order_coords = coordinates_cache.get(order.address)
+        total_price = order.total_price
 
         if order.restaurant:
-            distance_to_selected = None
-            if order_coords:
-                restaurant_coords = coordinates_cache.get(order.restaurant.address)
-                if restaurant_coords and order_coords:
-                    distance_to_selected = calculate_distance(
-                        order_coords, restaurant_coords
-                    )
-
-            orders_data.append(
-                {
-                    "order": order,
-                    "selected_restaurant": {
-                        "restaurant": order.restaurant,
-                        "distance": distance_to_selected,
-                        "has_distance": distance_to_selected is not None,
-                    },
-                    "available_restaurants": [],
-                    "total_price": order.total_price,
-                    "order_has_coords": order_coords is not None,
-                }
+            order_data = _process_order_with_restaurant(
+                order, coordinates_cache, total_price
             )
         else:
-            order_product_ids = set()
-            for item in order.items.all():
-                order_product_ids.add(item.product.id)
-
-            matching_restaurants = []
-            for restaurant in all_restaurants:
-                available_products = restaurant_products.get(restaurant.id, set())
-                if order_product_ids.issubset(available_products):
-                    matching_restaurants.append(restaurant)
-
-            restaurants_with_distances = []
-            for restaurant in matching_restaurants:
-                restaurant_coords = coordinates_cache.get(restaurant.address)
-                distance = None
-
-                if order_coords and restaurant_coords:
-                    distance = calculate_distance(order_coords, restaurant_coords)
-
-                restaurants_with_distances.append(
-                    {
-                        "restaurant": restaurant,
-                        "distance": distance,
-                        "has_distance": distance is not None,
-                    }
-                )
-
-            restaurants_with_distances.sort(
-                key=lambda x: (
-                    x["distance"] is None,
-                    x["distance"] if x["distance"] is not None else float("inf"),
-                )
+            order_data = _process_order_without_restaurant(
+                order,
+                coordinates_cache,
+                restaurant_products,
+                all_restaurants,
+                total_price,
             )
 
-            orders_data.append(
-                {
-                    "order": order,
-                    "selected_restaurant": None,
-                    "available_restaurants": restaurants_with_distances,
-                    "total_price": order.total_price,
-                    "order_has_coords": order_coords is not None,
-                }
-            )
+        orders_data.append(order_data)
 
     return render(
         request,
