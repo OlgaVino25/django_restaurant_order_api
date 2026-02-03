@@ -13,7 +13,6 @@ from .models import (
     RestaurantMenuItem,
     Order,
     OrderItem,
-    Place,
 )
 
 
@@ -262,16 +261,3 @@ class OrderAdmin(admin.ModelAdmin):
                 except Order.DoesNotExist:
                     pass
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
-
-
-@admin.register(Place)
-class PlaceAdmin(admin.ModelAdmin):
-    list_display = ["address", "lat", "lon", "updated_at"]
-    list_filter = ["updated_at"]
-    search_fields = ["address"]
-    readonly_fields = ["updated_at"]
-    ordering = ["-updated_at"]
-
-    fieldsets = (
-        ("Информация о месте", {"fields": ("address", "lat", "lon", "updated_at")}),
-    )

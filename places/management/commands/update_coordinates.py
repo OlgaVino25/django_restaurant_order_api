@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-from foodcartapp.models import Place
-from foodcartapp.utils.geocoder import get_or_create_coordinates
+from places.models import Place
+from places.geocoder import get_or_create_coordinates
 
 
 class Command(BaseCommand):

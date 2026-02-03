@@ -4,8 +4,6 @@ from django.views import View
 from django.urls import reverse_lazy
 from django.contrib.auth.decorators import user_passes_test
 
-import json
-
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 
@@ -16,13 +14,13 @@ from foodcartapp.models import (
     RestaurantMenuItem,
     Order,
     OrderItem,
-    Place,
 )
+from places.models import Place
 from django.db.models import Case, When, Value, IntegerField
-from foodcartapp.utils.geocoder import get_coordinates
+from places.geocoder import get_coordinates
 from django.db.models import Prefetch
 from collections import defaultdict
-from foodcartapp.utils.geocoder import calculate_distance
+from places.geocoder import calculate_distance
 
 
 class Login(forms.Form):
@@ -121,8 +119,7 @@ def view_restaurants(request):
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
     orders = (
-        Order.objects
-        .with_total_price()
+        Order.objects.with_total_price()
         .exclude(status="completed")
         .select_related("restaurant")
         .prefetch_related(

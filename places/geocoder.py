@@ -5,6 +5,8 @@ import logging
 from django.utils import timezone
 from requests.exceptions import RequestException
 
+from .models import Place
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,8 +48,6 @@ def get_or_create_coordinates(address):
     Получает координаты адреса из БД или API Яндекса.
     Кэширует результат в БД.
     """
-    from ..models import Place
-
     if not address or not address.strip():
         return None
 
@@ -76,7 +76,6 @@ def get_or_create_coordinates(address):
             return None
 
     except Place.DoesNotExist:
-
         try:
             coords = fetch_coordinates(settings.YANDEX_GEOCODER_API_KEY, address)
         except (RequestException, KeyError, IndexError, ValueError) as e:
