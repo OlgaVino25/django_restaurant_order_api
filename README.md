@@ -55,6 +55,7 @@ pip install -r requirements.txt
 ```
 
 Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
+
 ```sh
 YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
 ALLOWED_HOSTS=localhost,127.0.0.1
@@ -155,11 +156,28 @@ Parcel будет следить за файлами в каталоге `bundle
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 ```
 
-Настроить бэкенд: создать файл `.env` в каталоге `star_burger/` со следующими настройками:
+## Переменные окружения
 
-- `DEBUG` — дебаг-режим. Поставьте `False`.
-- `SECRET_KEY` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
-- `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/5.2/ref/settings/#allowed-hosts)
+Проект использует следующие переменные окружения, которые необходимо настроить в файле `.env` в каталоге `star_burger/`:
+
+### Обязательные переменные:
+- `SECRET_KEY` — секретный ключ Django для шифрования данных (пароли, сессии, CSRF-токены). **Никогда не используйте значение по умолчанию в продакшене!**
+- `ALLOWED_HOSTS` — список разрешенных хостов для работы Django. Например: `localhost,127.0.0.1,yourdomain.com`. [См. документацию Django](https://docs.djangoproject.com/en/5.2/ref/settings/#allowed-hosts)
+- `DEBUG` — режим отладки. В разработке используйте `True`, в продакшене — `False`
+
+### Переменные для геокодирования (обязательно для работы):
+- `YANDEX_GEOCODER_API_KEY` — ключ API Яндекс.Геокодера для определения координат адресов доставки. Получить можно в [кабинете разработчика](https://developer.tech.yandex.ru/services)
+
+### Пример заполненного файла `.env` для разработки:
+```env
+# Безопасность
+DEBUG=True
+SECRET_KEY=ваш-секретный-ключ-здесь
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# Яндекс.Геокодер
+YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
+```
 
 ## Цели проекта
 
