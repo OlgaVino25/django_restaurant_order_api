@@ -253,7 +253,6 @@ class OrderAdmin(admin.ModelAdmin):
             obj_id = request.resolver_match.kwargs.get("object_id")
             if obj_id:
                 try:
-                    order = Order.objects.get(id=obj_id)
                     order = Order.objects.prefetch_related("items__product").get(
                         id=obj_id
                     )
