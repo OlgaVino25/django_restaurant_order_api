@@ -136,20 +136,6 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "bundles"),
 ]
 
-try:
-    import rollbar
+from .rollbar_config import init_rollbar
 
-    if ROLLBAR["enabled"]:
-        rollbar.init(
-            access_token=ROLLBAR["access_token"],
-            environment=ROLLBAR["environment"],
-            root=ROLLBAR["root"],
-            handler="blocking",
-            locals={
-                "enabled": True,
-                "safe_list": ["request.META"],
-                "scrub_list": ["password", "secret", "token", "key"],
-            },
-        )
-except ImportError:
-    pass
+init_rollbar()

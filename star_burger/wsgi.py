@@ -11,4 +11,9 @@ import os
 from django.core.wsgi import get_wsgi_application
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "star_burger.settings")
+
+from .rollbar_config import init_rollbar
+
+init_rollbar()
+
 application = get_wsgi_application()
