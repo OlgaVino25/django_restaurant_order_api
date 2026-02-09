@@ -135,7 +135,3 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets"),
     os.path.join(BASE_DIR, "bundles"),
 ]
-
-from .rollbar_config import init_rollbar
-
-init_rollbar()
