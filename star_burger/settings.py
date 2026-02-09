@@ -42,6 +42,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "rollbar.contrib.django.middleware.RollbarNotifierMiddleware",
 ]
 
 ROOT_URLCONF = "star_burger.urls"
@@ -78,6 +79,14 @@ TEMPLATES = [
         },
     },
 ]
+
+ROLLBAR = {
+    "access_token": env.str("ROLLBAR_ACCESS_TOKEN", ""),
+    "environment": env.str("ROLLBAR_ENVIRONMENT", "development"),
+    "code_version": "1.0",
+    "root": BASE_DIR,
+    "enabled": bool(env.str("ROLLBAR_ACCESS_TOKEN", "")),
+}
 
 WSGI_APPLICATION = "star_burger.wsgi.application"
 
@@ -126,3 +135,21 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets"),
     os.path.join(BASE_DIR, "bundles"),
 ]
+
+try:
+    import rollbar
+
+    if ROLLBAR["enabled"]:
+        rollbar.init(
+            access_token=ROLLBAR["access_token"],
+            environment=ROLLBAR["environment"],
+            root=ROLLBAR["root"],
+            handler="blocking",
+            locals={
+                "enabled": True,
+                "safe_list": ["request.META"],
+                "scrub_list": ["password", "secret", "token", "key"],
+            },
+        )
+except ImportError:
+    pass

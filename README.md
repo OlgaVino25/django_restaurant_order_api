@@ -147,6 +147,34 @@ Parcel будет следить за файлами в каталоге `bundle
 
 **Сбросьте кэш браузера <kbd>Ctrl-F5</kbd>.** Браузер при любой возможности старается кэшировать файлы статики: CSS, картинки и js-код. Порой это приводит к странному поведению сайта, когда код уже давно изменился, но браузер этого не замечает и продолжает использовать старую закэшированную версию. В норме Parcel решает эту проблему самостоятельно. Он следит за пересборкой фронтенда и предупреждает JS-код в браузере о необходимости подтянуть свежий код. Но если вдруг что-то у вас идёт не так, то начните ремонт со сброса браузерного кэша, жмите <kbd>Ctrl-F5</kbd>.
 
+## Настройка Rollbar для мониторинга ошибок
+
+### Для разработки (локально):
+1. Создайте аккаунт на [rollbar.com](https://rollbar.com)
+2. Создайте новый проект типа "Django"
+3. Получите `POST_SERVER_ITEM_ACCESS_TOKEN`
+4. Добавьте в `.env`:
+
+```bash
+ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
+ROLLBAR_ENVIRONMENT=development
+```
+
+### Для продакшена (сервер):
+
+1. На сервере в файле .env установите:
+
+```bash
+ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
+ROLLBAR_ENVIRONMENT=production
+DEBUG=False
+```
+
+2. Перезапустите сервис:
+
+```bash
+sudo systemctl restart star-burger-gunicorn
+```
 
 ## Как запустить prod-версию сайта
 
@@ -165,18 +193,24 @@ Parcel будет следить за файлами в каталоге `bundle
 - `ALLOWED_HOSTS` — список разрешенных хостов для работы Django. Например: `localhost,127.0.0.1,yourdomain.com`. [См. документацию Django](https://docs.djangoproject.com/en/5.2/ref/settings/#allowed-hosts)
 - `DEBUG` — режим отладки. В разработке используйте `True`, в продакшене — `False`
 
+`ROLLBAR_ACCESS_TOKEN` - токен из Rollbar (обязательно)
+`ROLLBAR_ENVIRONMENT` - окружение: development или production (по умолчанию: development)
+
 ### Переменные для геокодирования (обязательно для работы):
 - `YANDEX_GEOCODER_API_KEY` — ключ API Яндекс.Геокодера для определения координат адресов доставки. Получить можно в [кабинете разработчика](https://developer.tech.yandex.ru/services)
 
 ### Пример заполненного файла `.env` для разработки:
 ```env
 # Безопасность
-DEBUG=True
+DEBUG=False
 SECRET_KEY=ваш-секретный-ключ-здесь
 ALLOWED_HOSTS=localhost,127.0.0.1
 
 # Яндекс.Геокодер
 YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
+
+ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
+ROLLBAR_ENVIRONMENT=production
 ```
 
 ## Цели проекта
