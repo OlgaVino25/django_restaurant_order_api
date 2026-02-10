@@ -184,6 +184,18 @@ sudo systemctl restart star-burger-gunicorn
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 ```
 
+## Установка PostgreSQL для разработки
+
+Установите PostgreSQL и pgAdmin 4
+1. Создайте базу данных и пользователя через pgAdmin:
+   - Database: ``star_burger``
+   - User: ``star_burger_user``
+
+2. Примените миграции:
+```powershell
+python manage.py migrate
+```
+
 ## Переменные окружения
 
 Проект использует следующие переменные окружения, которые необходимо настроить в файле `.env` в каталоге `star_burger/`:
@@ -195,6 +207,8 @@ sudo systemctl restart star-burger-gunicorn
 
 `ROLLBAR_ACCESS_TOKEN` - токен из Rollbar (обязательно)
 `ROLLBAR_ENVIRONMENT` - окружение: development или production (по умолчанию: development)
+
+`DATABASE_URL`=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
 
 ### Переменные для геокодирования (обязательно для работы):
 - `YANDEX_GEOCODER_API_KEY` — ключ API Яндекс.Геокодера для определения координат адресов доставки. Получить можно в [кабинете разработчика](https://developer.tech.yandex.ru/services)
@@ -211,6 +225,8 @@ YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
 
 ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
 ROLLBAR_ENVIRONMENT=production
+
+DATABASE_URL=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
 ```
 
 ## Цели проекта

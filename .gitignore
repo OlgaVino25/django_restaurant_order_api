@@ -2,6 +2,10 @@ bundles/**
 node_modules/
 media/
 
+convert_encoding.py
+data_utf8.json
+dump_data.py
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

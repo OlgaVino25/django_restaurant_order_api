@@ -95,7 +95,9 @@ MEDIA_URL = "/media/"
 
 DATABASES = {
     "default": dj_database_url.config(
-        default="sqlite:////{0}".format(os.path.join(BASE_DIR, "db.sqlite3"))
+        default="postgres://star_burger_user:password@localhost:5432/star_burger",
+        conn_max_age=600,
+        conn_health_checks=True,
     )
 }
 
