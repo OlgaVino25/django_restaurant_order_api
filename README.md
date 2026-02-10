@@ -160,6 +160,18 @@ ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
 ROLLBAR_ENVIRONMENT=development
 ```
 
+## Установка PostgreSQL для разработки
+
+Установите PostgreSQL и pgAdmin 4
+1. Создайте базу данных и пользователя через pgAdmin:
+   - Database: ``star_burger``
+   - User: ``star_burger_user``
+
+2. Примените миграции:
+```powershell
+python manage.py migrate
+```
+
 ### Для продакшена (сервер):
 
 1. На сервере в файле .env установите:
@@ -176,24 +188,64 @@ DEBUG=False
 sudo systemctl restart star-burger-gunicorn
 ```
 
+## Настройка PostgreSQL на сервере
+
+1. Установите PostgreSQL:
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+```
+
+2. Создайте базу данных и пользователя:
+
+```bash
+sudo -u postgres psql
+```
+
+Выполните в psql:
+
+
+```sql
+CREATE DATABASE star_burger;
+CREATE USER star_burger_user WITH PASSWORD 'сложный_пароль';
+ALTER ROLE star_burger_user SET client_encoding TO 'utf8';
+ALTER ROLE star_burger_user SET default_transaction_isolation TO 'read committed';
+ALTER ROLE star_burger_user SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE star_burger TO star_burger_user;
+\q
+```
+
+3. Обновите `.env` файл на сервере:
+
+```env
+DATABASE_URL=postgres://star_burger_user:сложный_пароль@localhost:5432/star_burger
+```
+
+4. Примените миграции:
+
+```bash
+python manage.py migrate
+```
+
+5. Перенесите данные из старой базы (если нужно):
+
+```bash
+python manage.py dumpdata --indent 2 > data.json
+python manage.py loaddata data.json
+```
+
+**Удалите SQLite файлы**
+
+```bash
+rm -f /opt/django_restaurant_order_api/db.sqlite3
+```
+
 ## Как запустить prod-версию сайта
 
 Собрать фронтенд:
 
 ```sh
 ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
-```
-
-## Установка PostgreSQL для разработки
-
-Установите PostgreSQL и pgAdmin 4
-1. Создайте базу данных и пользователя через pgAdmin:
-   - Database: ``star_burger``
-   - User: ``star_burger_user``
-
-2. Примените миграции:
-```powershell
-python manage.py migrate
 ```
 
 ## Переменные окружения
@@ -205,10 +257,10 @@ python manage.py migrate
 - `ALLOWED_HOSTS` — список разрешенных хостов для работы Django. Например: `localhost,127.0.0.1,yourdomain.com`. [См. документацию Django](https://docs.djangoproject.com/en/5.2/ref/settings/#allowed-hosts)
 - `DEBUG` — режим отладки. В разработке используйте `True`, в продакшене — `False`
 
-`ROLLBAR_ACCESS_TOKEN` - токен из Rollbar (обязательно)
-`ROLLBAR_ENVIRONMENT` - окружение: development или production (по умолчанию: development)
+- `ROLLBAR_ACCESS_TOKEN` - токен из Rollbar (обязательно)
+- `ROLLBAR_ENVIRONMENT` - окружение: development или production (по умолчанию: development)
 
-`DATABASE_URL`=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
+- `DATABASE_URL`=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
 
 ### Переменные для геокодирования (обязательно для работы):
 - `YANDEX_GEOCODER_API_KEY` — ключ API Яндекс.Геокодера для определения координат адресов доставки. Получить можно в [кабинете разработчика](https://developer.tech.yandex.ru/services)
@@ -226,7 +278,7 @@ YANDEX_GEOCODER_API_KEY=ваш_ключ_от_яндекс_геокодера
 ROLLBAR_ACCESS_TOKEN=ваш_токен_здесь
 ROLLBAR_ENVIRONMENT=production
 
-DATABASE_URL=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
+DATABASE_URL=postgres://star_burger_user:сложный_пароль@localhost:5432/star_burger
 ```
 
 ## Цели проекта
