@@ -260,3 +260,17 @@ class OrderAdmin(admin.ModelAdmin):
                 except Order.DoesNotExist:
                     pass
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+    
+    def save_formset(self, request, form, formset, change):
+        """
+        Автоматически заполняет цену в OrderItem при создании заказа.
+        """
+        instances = formset.save(commit=False)
+        for obj in formset.deleted_objects:
+            obj.delete()
+        for instance in instances:
+            if isinstance(instance, OrderItem) and instance.price is None:
+                # Устанавливаем цену из продукта
+                instance.price = instance.product.price
+            instance.save()
+        formset.save_m2m()
