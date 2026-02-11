@@ -281,6 +281,23 @@ ROLLBAR_ENVIRONMENT=production
 DATABASE_URL=postgres://star_burger_user:сложный_пароль@localhost:5432/star_burger
 ```
 
+## Быстрый деплой на сервер (production)
+
+После того как вы внесли изменения в код и запушили их в GitHub, зайдите на сервер и выполните одну команду:
+
+```bash
+/root/deploy_star_burger.sh
+```
+
+**Скрипт автоматически:**
+
+- обновит код из репозитория;
+- установит зависимости Python и Node.js;
+- накатит миграции Django;
+- соберёт статику Django;
+- пересоберёт фронтенд (Parcel);
+- перезапустит Gunicorn и перезагрузит Nginx.
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).
