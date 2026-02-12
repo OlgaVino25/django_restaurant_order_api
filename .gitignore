@@ -15,6 +15,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Local settings
+*.local.py
+*.backup
+
 # Distribution / packaging
 .Python
 build/
