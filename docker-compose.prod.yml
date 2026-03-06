@@ -23,7 +23,7 @@ services:
     command: gunicorn star_burger.wsgi:application --bind 0.0.0.0:8000
     volumes:
       - media_volume:/app/media
-      - static_volume:/app/static
+      - ./static:/app/static
     environment:
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - YANDEX_GEOCODER_API_KEY=${YANDEX_GEOCODER_API_KEY}
@@ -38,4 +38,3 @@ services:
 volumes:
   postgres_data:
   media_volume:
-  static_volume:
