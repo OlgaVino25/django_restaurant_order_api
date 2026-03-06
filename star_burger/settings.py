@@ -19,6 +19,11 @@ YANDEX_GEOCODER_API_KEY = os.getenv("YANDEX_GEOCODER_API_KEY")
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
 
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])
+CSRF_COOKIE_SECURE = env.bool("CSRF_COOKIE_SECURE", False)
+SESSION_COOKIE_SECURE = env.bool("SESSION_COOKIE_SECURE", False)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 INSTALLED_APPS = [
     "foodcartapp.apps.FoodcartappConfig",
     "restaurateur.apps.RestaurateurConfig",
