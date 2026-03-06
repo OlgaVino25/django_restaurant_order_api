@@ -301,6 +301,21 @@ DATABASE_URL=postgres://star_burger_user:сложный_пароль@localhost:5
 - пересоберёт фронтенд (Parcel);
 - перезапустит Gunicorn и перезагрузит Nginx.
 
+## Развёртывание на сервере с Docker
+
+Проект полностью контейнеризирован. Для запуска на сервере потребуется только Docker и Docker Compose.
+
+### Подготовка сервера
+
+1. Установите Docker и Docker Compose:
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+```
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).

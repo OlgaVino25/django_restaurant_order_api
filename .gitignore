@@ -79,6 +79,7 @@ db.sqlite3-journal
 
 # Environment variables
 .env
+.env.prod
 .env.local
 .env.*.local
 .env.production
