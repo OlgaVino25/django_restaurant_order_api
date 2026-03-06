@@ -22,7 +22,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 COPY . .
 
-COPY --from=frontend-builder /app/bundles /app/bundles
+COPY bundles /app/bundles
 
 RUN python manage.py collectstatic --noinput
 
