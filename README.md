@@ -274,7 +274,7 @@ rm -f /opt/django_restaurant_order_api/db.sqlite3
 - `ROLLBAR_ACCESS_TOKEN` - токен из Rollbar (обязательно)
 - `ROLLBAR_ENVIRONMENT` - окружение: development или production (по умолчанию: development)
 
-- `DATABASE_URL`=postgres://star*burger_user:ваш*пароль@localhost:5432/star_burger
+- `DATABASE_URL`=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
 
 ### Переменные для геокодирования (обязательно для работы):
 
