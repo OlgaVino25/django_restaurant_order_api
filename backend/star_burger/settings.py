@@ -4,11 +4,11 @@ import dj_database_url
 
 from environs import Env
 
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 env = Env()
-env.read_env()
+env.read_env(os.path.join(BASE_DIR, "../.env"))
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
 
 
