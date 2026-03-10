@@ -139,6 +139,6 @@ GEOCODER_CACHE_DAYS = 30
 
 
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "assets"),
-    os.path.join(BASE_DIR, "bundles"),
+    os.path.join(BASE_DIR, '../frontend/assets'),
+    os.path.join(BASE_DIR, "../frontend/bundles"),
 ]
