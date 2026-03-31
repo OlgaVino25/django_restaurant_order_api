@@ -24,6 +24,8 @@ services:
     volumes:
       - media_volume:/app/media
       - ./static:/app/static
+    ports:
+      - "8000:8000"
     environment:
       - DATABASE_URL=postgres://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
       - YANDEX_GEOCODER_API_KEY=${YANDEX_GEOCODER_API_KEY}
