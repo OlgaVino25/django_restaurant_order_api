@@ -16,9 +16,9 @@ echo "Собираем и запускаем новые контейнеры..."
 docker-compose -f docker-compose.prod.yml up -d --build
 
 echo "Применяем миграции..."
-docker-compose -f docker-compose.prod.yml exec -T web python manage.py migrate
+docker-compose -f docker-compose.prod.yml exec -T web python backend/manage.py migrate
 
 echo "Собираем статику..."
-docker-compose -f docker-compose.prod.yml exec -T web python manage.py collectstatic --noinput
+docker-compose -f docker-compose.prod.yml exec -T web python backend/manage.py collectstatic --noinput
 
 echo "Деплой завершён успешно!"

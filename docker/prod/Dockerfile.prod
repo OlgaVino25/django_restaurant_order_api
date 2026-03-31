@@ -3,16 +3,18 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    libjpeg-dev libpng-dev && \
-    rm -rf /var/lib/apt/lists/*
+    libjpeg-dev libpng-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
 COPY . .
 
-COPY bundles /app/bundles
+COPY backend/bundles /app/bundles
 
-RUN python manage.py collectstatic --noinput
+RUN python backend/manage.py collectstatic --noinput
 
-CMD ["gunicorn", "star_burger.wsgi:application", "--bind", "0.0.0.0:8000"]
+ENV PYTHONPATH=/app/backend:$PYTHONPATH
+
+CMD ["gunicorn", "star_burger.wsgi:application", "--bind", "0.0.0.0:8000", "--chdir", "/app/backend"]
