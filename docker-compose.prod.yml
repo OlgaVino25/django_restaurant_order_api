@@ -16,6 +16,11 @@ services:
       timeout: 5s
       retries: 5
 
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
   web:
     build:
       context: .
@@ -36,6 +41,11 @@ services:
       db:
         condition: service_healthy
     restart: always
+
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
 volumes:
   postgres_data:
